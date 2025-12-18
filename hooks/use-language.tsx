@@ -40,6 +40,9 @@ interface Translations {
   standardMap: string
   satelliteMap: string
   terrainMap: string
+  estimatedTime: string
+  hours: string
+  minutes: string
 }
 
 const translations: Record<Language, Translations> = {
@@ -79,6 +82,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "标准地图",
     satelliteMap: "卫星地图",
     terrainMap: "地形地图",
+    estimatedTime: "预计时间",
+    hours: "小时",
+    minutes: "分钟",
   },
   en: {
     searchPlaceholder: "Search places",
@@ -116,6 +122,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "Standard",
     satelliteMap: "Satellite",
     terrainMap: "Terrain",
+    estimatedTime: "Estimated Time",
+    hours: "h",
+    minutes: "min",
   },
   ar: {
     searchPlaceholder: "البحث عن الأماكن",
@@ -153,6 +162,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "قياسي",
     satelliteMap: "الأقمار الصناعية",
     terrainMap: "التضاريس",
+    estimatedTime: "الوقت المقدر",
+    hours: "ساعة",
+    minutes: "دقيقة",
   },
   ms: {
     searchPlaceholder: "Cari lokasi",
@@ -190,6 +202,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "Standard",
     satelliteMap: "Satelit",
     terrainMap: "Rupa Bumi",
+    estimatedTime: "Masa Anggaran",
+    hours: "jam",
+    minutes: "minit",
   },
   pt: {
     searchPlaceholder: "Pesquisar locais",
@@ -227,6 +242,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "Padrão",
     satelliteMap: "Satélite",
     terrainMap: "Terreno",
+    estimatedTime: "Tempo Estimado",
+    hours: "h",
+    minutes: "min",
   },
   es: {
     searchPlaceholder: "Buscar lugares",
@@ -234,7 +252,7 @@ const translations: Record<Language, Translations> = {
     getDirections: "Obtener Direcciones",
     routePlanning: "Planificación de Ruta",
     startPoint: "Punto de inicio",
-    endPoint: "Punto final",
+    endPoint: "Ponto final",
     routeDetails: "Detalles de la Ruta",
     route: "Ruta",
     planRoute: "Planificar Ruta",
@@ -264,6 +282,9 @@ const translations: Record<Language, Translations> = {
     standardMap: "Estándar",
     satelliteMap: "Satélite",
     terrainMap: "Terreno",
+    estimatedTime: "Tiempo Estimado",
+    hours: "h",
+    minutes: "min",
   },
 }
 

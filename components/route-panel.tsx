@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, MapPin, Car, Truck, ChevronRight, ArrowUpDown, X } from "lucide-react"
+import { ArrowLeft, MapPin, Car, Truck, ChevronRight, ArrowUpDown, X, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -60,6 +60,26 @@ const parseCoordinates = (text: string): { lat: number; lng: number } | null => 
   return null
 }
 
+const calculateDistance = (start: { lat: number; lng: number }, end: { lat: number; lng: number }): number => {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = ((end.lat - start.lat) * Math.PI) / 180
+  const dLng = ((end.lng - start.lng) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((start.lat * Math.PI) / 180) *
+      Math.cos((end.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+const estimateTravelTime = (distanceKm: number, mode: TravelMode): number => {
+  // Average speeds: driving 60 km/h, truck 50 km/h
+  const speed = mode === "driving" ? 60 : 50
+  return (distanceKm / speed) * 60 // Return time in minutes
+}
+
 export function RoutePanel({
   initialStartText,
   initialEndText,
@@ -79,6 +99,8 @@ export function RoutePanel({
   const [routeInstructions, setRouteInstructions] = useState<Array<{ icon: string; text: string; distance: string }>>(
     [],
   )
+  const [totalDistance, setTotalDistance] = useState<number>(0)
+  const [totalTime, setTotalTime] = useState<number>(0)
 
   useEffect(() => {
     if (initialStartText && initialStartText !== startQuery) {
@@ -108,9 +130,15 @@ export function RoutePanel({
       onRouteComplete(selectedStart, selectedEnd)
       const instructions = generateRouteInstructions(selectedStart, selectedEnd, t)
       setRouteInstructions(instructions)
+
+      const distance = calculateDistance(selectedStart, selectedEnd)
+      const time = estimateTravelTime(distance, travelMode)
+      setTotalDistance(distance)
+      setTotalTime(time)
+
       setShowRouteDetails(true)
     }
-  }, [selectedStart, selectedEnd])
+  }, [selectedStart, selectedEnd, travelMode])
 
   const handleStartSelect = (location: (typeof locationsDatabase)[0]) => {
     const locationName =
@@ -382,19 +410,44 @@ export function RoutePanel({
           </div>
 
           {showRouteDetails && selectedStart && selectedEnd && (
-            <div className="mt-4 p-4 bg-primary/5 rounded-xl border border-primary/20 max-h-[400px] overflow-y-auto">
-              <div className="space-y-3">
-                {routeInstructions.map((instruction, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="mt-1">{renderInstructionIcon(instruction.icon)}</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">{instruction.text}</p>
-                      {instruction.distance && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{instruction.distance}</p>
-                      )}
+            <div className="mt-4 space-y-3">
+              <div className="p-4 bg-primary/10 rounded-xl border border-primary/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t.distance}</p>
+                      <p className="text-xl font-bold text-foreground">{totalDistance.toFixed(1)} km</p>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t.estimatedTime}</p>
+                      <p className="text-xl font-bold text-foreground">
+                        {totalTime < 60
+                          ? `${Math.round(totalTime)} ${t.minutes}`
+                          : `${Math.floor(totalTime / 60)} ${t.hours} ${Math.round(totalTime % 60)} ${t.minutes}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/20 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3">
+                  {routeInstructions.map((instruction, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="mt-1">{renderInstructionIcon(instruction.icon)}</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{instruction.text}</p>
+                        {instruction.distance && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{instruction.distance}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
