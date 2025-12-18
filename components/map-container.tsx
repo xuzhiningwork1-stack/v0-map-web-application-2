@@ -13,6 +13,7 @@ interface MapContainerProps {
   selectedLocation: { lat: number; lng: number; name: string } | null
   routeStart: { lat: number; lng: number; name: string } | null
   routeEnd: { lat: number; lng: number; name: string } | null
+  waypoints?: Array<{ lat: number; lng: number; name: string }>
   onSetRouteStart?: (location: { lat: number; lng: number; name: string }) => void
   onSetRouteEnd?: (location: { lat: number; lng: number; name: string }) => void
   onSearchNearby?: (location: { lat: number; lng: number; name: string }) => void
@@ -23,6 +24,7 @@ export function MapContainer({
   selectedLocation,
   routeStart,
   routeEnd,
+  waypoints = [],
   onSetRouteStart,
   onSetRouteEnd,
   onSearchNearby,
@@ -48,12 +50,13 @@ export function MapContainer({
 
   useEffect(() => {
     if (routeStart && routeEnd) {
-      const avgLat = (routeStart.lat + routeEnd.lat) / 2
-      const avgLng = (routeStart.lng + routeEnd.lng) / 2
+      const allPoints = [routeStart, ...waypoints, routeEnd]
+      const avgLat = allPoints.reduce((sum, p) => sum + p.lat, 0) / allPoints.length
+      const avgLng = allPoints.reduce((sum, p) => sum + p.lng, 0) / allPoints.length
       setMapCenter({ lat: avgLat, lng: avgLng })
       setZoom(8)
     }
-  }, [routeStart, routeEnd])
+  }, [routeStart, routeEnd, waypoints])
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 1, 18))
   const handleZoomOut = () => setZoom((z) => Math.max(z - 1, 3))
@@ -224,64 +227,84 @@ export function MapContainer({
   const generateCurvedPath = () => {
     if (!routeStart || !routeEnd) return ""
 
-    const startPos = getScreenPosition(routeStart)
-    const endPos = getScreenPosition(routeEnd)
+    const allPoints = [routeStart, ...waypoints, routeEnd]
+    const positions = allPoints.map(getScreenPosition)
 
-    const midX = (startPos.x + endPos.x) / 2
-    const midY = (startPos.y + endPos.y) / 2
+    if (positions.length === 2) {
+      // Simple curve for 2 points
+      const startPos = positions[0]
+      const endPos = positions[1]
+      const midX = (startPos.x + endPos.x) / 2
+      const midY = (startPos.y + endPos.y) / 2
+      const dx = endPos.x - startPos.x
+      const dy = endPos.y - startPos.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const offset = distance * 0.15
+      const perpX = -dy / distance
+      const perpY = dx / distance
+      const controlX = midX + perpX * offset
+      const controlY = midY + perpY * offset
+      return `M ${startPos.x} ${startPos.y} Q ${controlX} ${controlY}, ${endPos.x} ${endPos.y}`
+    }
 
-    const dx = endPos.x - startPos.x
-    const dy = endPos.y - startPos.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
-
-    const offset = distance * 0.15
-    const perpX = -dy / distance
-    const perpY = dx / distance
-
-    const controlX = midX + perpX * offset
-    const controlY = midY + perpY * offset
-
-    return `M ${startPos.x} ${startPos.y} Q ${controlX} ${controlY}, ${endPos.x} ${endPos.y}`
+    // Multiple segments for waypoints
+    let path = `M ${positions[0].x} ${positions[0].y}`
+    for (let i = 0; i < positions.length - 1; i++) {
+      const startPos = positions[i]
+      const endPos = positions[i + 1]
+      const midX = (startPos.x + endPos.x) / 2
+      const midY = (startPos.y + endPos.y) / 2
+      const dx = endPos.x - startPos.x
+      const dy = endPos.y - startPos.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const offset = distance * 0.15
+      const perpX = -dy / distance
+      const perpY = dx / distance
+      const controlX = midX + perpX * offset
+      const controlY = midY + perpY * offset
+      path += ` Q ${controlX} ${controlY}, ${endPos.x} ${endPos.y}`
+    }
+    return path
   }
 
   const generateArrowsAlongPath = () => {
     if (!routeStart || !routeEnd) return []
 
-    const startPos = getScreenPosition(routeStart)
-    const endPos = getScreenPosition(routeEnd)
+    const arrows: Array<{ x: number; y: number; angle: number }> = []
+    const allPoints = [routeStart, ...waypoints, routeEnd]
+    const positions = allPoints.map(getScreenPosition)
 
-    const midX = (startPos.x + endPos.x) / 2
-    const midY = (startPos.y + endPos.y) / 2
+    // Generate arrows for each segment
+    for (let i = 0; i < positions.length - 1; i++) {
+      const startPos = positions[i]
+      const endPos = positions[i + 1]
+      const midX = (startPos.x + endPos.x) / 2
+      const midY = (startPos.y + endPos.y) / 2
+      const dx = endPos.x - startPos.x
+      const dy = endPos.y - startPos.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const offset = distance * 0.15
+      const perpX = -dy / distance
+      const perpY = dx / distance
+      const controlX = midX + perpX * offset
+      const controlY = midY + perpY * offset
 
-    const dx = endPos.x - startPos.x
-    const dy = endPos.y - startPos.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
+      const numArrows = Math.floor(distance / 80)
+      for (let j = 1; j <= numArrows; j++) {
+        const t = j / (numArrows + 1)
+        const x = (1 - t) * (1 - t) * startPos.x + 2 * (1 - t) * t * controlX + t * t * endPos.x
+        const y = (1 - t) * (1 - t) * startPos.y + 2 * (1 - t) * t * controlY + t * t * endPos.y
 
-    const offset = distance * 0.15
-    const perpX = -dy / distance
-    const perpY = dx / distance
+        const t1 = Math.max(0, t - 0.01)
+        const t2 = Math.min(1, t + 0.01)
+        const x1 = (1 - t1) * (1 - t1) * startPos.x + 2 * (1 - t1) * t1 * controlX + t1 * t1 * endPos.x
+        const y1 = (1 - t1) * (1 - t1) * startPos.y + 2 * (1 - t1) * t1 * controlY + t1 * t1 * endPos.y
+        const x2 = (1 - t2) * (1 - t2) * startPos.x + 2 * (1 - t2) * t2 * controlX + t2 * t2 * endPos.x
+        const y2 = (1 - t2) * (1 - t2) * startPos.y + 2 * (1 - t2) * t2 * controlY + t2 * t2 * endPos.y
 
-    const controlX = midX + perpX * offset
-    const controlY = midY + perpY * offset
-
-    const arrows = []
-    const numArrows = Math.floor(distance / 80)
-
-    for (let i = 1; i <= numArrows; i++) {
-      const t = i / (numArrows + 1)
-      const x = (1 - t) * (1 - t) * startPos.x + 2 * (1 - t) * t * controlX + t * t * endPos.x
-      const y = (1 - t) * (1 - t) * startPos.y + 2 * (1 - t) * t * controlY + t * t * endPos.y
-
-      const t1 = Math.max(0, t - 0.01)
-      const t2 = Math.min(1, t + 0.01)
-      const x1 = (1 - t1) * (1 - t1) * startPos.x + 2 * (1 - t1) * t1 * controlX + t1 * t1 * endPos.x
-      const y1 = (1 - t1) * (1 - t1) * startPos.y + 2 * (1 - t1) * t1 * controlY + t1 * t1 * endPos.y
-      const x2 = (1 - t2) * (1 - t2) * startPos.x + 2 * (1 - t2) * t2 * controlX + t2 * t2 * endPos.x
-      const y2 = (1 - t2) * (1 - t2) * startPos.y + 2 * (1 - t2) * t2 * controlY + t2 * t2 * endPos.y
-
-      const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI)
-
-      arrows.push({ x, y, angle })
+        const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI)
+        arrows.push({ x, y, angle })
+      }
     }
 
     return arrows
@@ -289,6 +312,7 @@ export function MapContainer({
 
   const routeStartPos = routeStart ? getScreenPosition(routeStart) : null
   const routeEndPos = routeEnd ? getScreenPosition(routeEnd) : null
+  const waypointPositions = waypoints.map(getScreenPosition)
   const arrowPositions = generateArrowsAlongPath()
 
   return (
@@ -503,6 +527,22 @@ export function MapContainer({
               fill="#3A5EFB"
               transform={`translate(${arrow.x}, ${arrow.y}) rotate(${arrow.angle})`}
             />
+          ))}
+          {waypointPositions.map((pos, index) => (
+            <g key={`waypoint-${index}`}>
+              <circle cx={pos.x} cy={pos.y} r="14" fill="#f97316" stroke="white" strokeWidth="3" />
+              <text
+                x={pos.x}
+                y={pos.y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="white"
+                fontSize="11"
+                fontWeight="bold"
+              >
+                {index + 1}
+              </text>
+            </g>
           ))}
           {/* Start point marker with text */}
           <circle cx={routeStartPos.x} cy={routeStartPos.y} r="16" fill="#3A5EFB" stroke="white" strokeWidth="3" />

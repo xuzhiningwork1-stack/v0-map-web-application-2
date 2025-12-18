@@ -43,6 +43,11 @@ interface Translations {
   estimatedTime: string
   hours: string
   minutes: string
+  waypoint: string
+  addWaypoint: string
+  removeWaypoint: string
+  quickSearch: string
+  clearAll: string
 }
 
 const translations: Record<Language, Translations> = {
@@ -85,6 +90,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "预计时间",
     hours: "小时",
     minutes: "分钟",
+    waypoint: "途经点",
+    addWaypoint: "添加途经点",
+    removeWaypoint: "删除途经点",
+    quickSearch: "快捷搜索",
+    clearAll: "清空",
   },
   en: {
     searchPlaceholder: "Search places",
@@ -125,6 +135,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "Estimated Time",
     hours: "h",
     minutes: "min",
+    waypoint: "Waypoint",
+    addWaypoint: "Add waypoint",
+    removeWaypoint: "Remove waypoint",
+    quickSearch: "Quick Search",
+    clearAll: "Clear All",
   },
   ar: {
     searchPlaceholder: "البحث عن الأماكن",
@@ -165,6 +180,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "الوقت المقدر",
     hours: "ساعة",
     minutes: "دقيقة",
+    waypoint: "نقطة مرور",
+    addWaypoint: "إضافة نقطة مرور",
+    removeWaypoint: "حذف نقطة مرور",
+    quickSearch: "بحث سريع",
+    clearAll: "مسح الكل",
   },
   ms: {
     searchPlaceholder: "Cari lokasi",
@@ -205,6 +225,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "Masa Anggaran",
     hours: "jam",
     minutes: "minit",
+    waypoint: "Titik Singgah",
+    addWaypoint: "Tambah titik singgah",
+    removeWaypoint: "Buang titik singgah",
+    quickSearch: "Carian Pantas",
+    clearAll: "Kosongkan Semua",
   },
   pt: {
     searchPlaceholder: "Pesquisar locais",
@@ -245,6 +270,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "Tempo Estimado",
     hours: "h",
     minutes: "min",
+    waypoint: "Ponto de Passagem",
+    addWaypoint: "Adicionar ponto de passagem",
+    removeWaypoint: "Remover ponto de passagem",
+    quickSearch: "Busca Rápida",
+    clearAll: "Limpar Tudo",
   },
   es: {
     searchPlaceholder: "Buscar lugares",
@@ -285,6 +315,11 @@ const translations: Record<Language, Translations> = {
     estimatedTime: "Tiempo Estimado",
     hours: "h",
     minutes: "min",
+    waypoint: "Punto de Paso",
+    addWaypoint: "Añadir punto de paso",
+    removeWaypoint: "Eliminar punto de paso",
+    quickSearch: "Búsqueda Rápida",
+    clearAll: "Limpiar Todo",
   },
 }
 

@@ -22,6 +22,7 @@ export default function MapPage() {
   const [routeEndText, setRouteEndText] = useState("")
   const [routeStartCoords, setRouteStartCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [routeEndCoords, setRouteEndCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [waypoints, setWaypoints] = useState<Array<{ lat: number; lng: number; name: string }>>([])
   const [showPOIDetail, setShowPOIDetail] = useState(false)
   const [nearbySearchLocation, setNearbySearchLocation] = useState<{ lat: number; lng: number; name: string } | null>(
     null,
@@ -48,15 +49,19 @@ export default function MapPage() {
   }, [selectedLocation])
 
   const handleRouteComplete = useCallback(
-    (start: { lat: number; lng: number; name: string }, end: { lat: number; lng: number; name: string }) => {
+    (
+      start: { lat: number; lng: number; name: string },
+      end: { lat: number; lng: number; name: string },
+      waypointsList: Array<{ lat: number; lng: number; name: string }> = [],
+    ) => {
       setRouteStartCoords({ lat: start.lat, lng: start.lng })
       setRouteEndCoords({ lat: end.lat, lng: end.lng })
+      setWaypoints(waypointsList)
     },
     [],
   )
 
   const handleSetRouteStart = useCallback((location: { lat: number; lng: number; name: string }) => {
-    console.log("[v0] Setting route start to:", location.name)
     setRouteStartText(location.name)
     setRouteStartCoords({ lat: location.lat, lng: location.lng })
     setRouteMode(true)
@@ -65,7 +70,6 @@ export default function MapPage() {
   }, [])
 
   const handleSetRouteEnd = useCallback((location: { lat: number; lng: number; name: string }) => {
-    console.log("[v0] Setting route end to:", location.name)
     setRouteEndText(location.name)
     setRouteEndCoords({ lat: location.lat, lng: location.lng })
     setRouteMode(true)
@@ -96,7 +100,6 @@ export default function MapPage() {
   }, [selectedLocation])
 
   const handleSearchNearbyFromMap = useCallback((location: { lat: number; lng: number; name: string }) => {
-    console.log("[v0] handleSearchNearbyFromMap called with:", location)
     setNearbySearchLocation(location)
     setRouteMode(false)
     setShowPOIDetail(false)
@@ -123,6 +126,7 @@ export default function MapPage() {
   const handleClearRoute = useCallback(() => {
     setRouteStartCoords(null)
     setRouteEndCoords(null)
+    setWaypoints([])
   }, [])
 
   return (
@@ -164,6 +168,7 @@ export default function MapPage() {
         selectedLocation={selectedLocation}
         routeStart={routeStartCoords}
         routeEnd={routeEndCoords}
+        waypoints={waypoints}
         onSetRouteStart={handleSetRouteStart}
         onSetRouteEnd={handleSetRouteEnd}
         onSearchNearby={handleSearchNearbyFromMap}
