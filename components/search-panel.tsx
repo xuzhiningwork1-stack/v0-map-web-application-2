@@ -35,21 +35,25 @@ export function SearchPanel({
   onShowPOIDetail,
   onSetAsDestination,
 }: SearchPanelProps) {
-  const [searchHistory, setSearchHistory] = useState<Array<{ name: string; type?: string; lat: number; lng: number }>>(
-    [],
-  )
+  const [searchHistory, setSearchHistory] = useState<Array<{ name: string; type?: string; lat: number; lng: number }>>([
+    { name: "天安门广场", type: "landmark", lat: 39.9042, lng: 116.4074 },
+    { name: "故宫", type: "landmark", lat: 39.9163, lng: 116.3972 },
+    { name: "颐和园", type: "park", lat: 39.9998, lng: 116.2755 },
+    { name: "鸟巢", type: "landmark", lat: 39.9928, lng: 116.3972 },
+    { name: "北京首都国际机场", type: "airport", lat: 40.0799, lng: 116.6031 },
+  ])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const { t, language, dir } = useLanguage()
 
   useEffect(() => {
     const saved = localStorage.getItem("searchHistory")
-    console.log("[v0] Loading search history from localStorage:", saved)
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        console.log("[v0] Parsed search history:", parsed)
-        setSearchHistory(parsed)
+        if (parsed && parsed.length > 0) {
+          setSearchHistory(parsed)
+        }
       } catch (e) {
         console.error("[v0] Failed to load search history:", e)
       }
@@ -57,7 +61,6 @@ export function SearchPanel({
   }, [])
 
   useEffect(() => {
-    console.log("[v0] Saving search history to localStorage:", searchHistory)
     localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
   }, [searchHistory])
 
@@ -74,8 +77,6 @@ export function SearchPanel({
               : language === "pt"
                 ? location.namePt || location.nameEn
                 : location.nameEs || location.nameEn
-
-    console.log("[v0] Adding to search history:", locationName)
 
     onSearch({
       lat: location.lat,
@@ -99,19 +100,16 @@ export function SearchPanel({
   }
 
   const handleCategorySearch = (category: string) => {
-    console.log("[v0] Category search:", category)
     setSearchQuery(category)
     setShowSuggestions(true)
   }
 
   const handleRemoveHistoryItem = (index: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Removing history item at index:", index)
     setSearchHistory((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleClearAllHistory = () => {
-    console.log("[v0] Clearing all history")
     setSearchHistory([])
   }
 
@@ -182,11 +180,9 @@ export function SearchPanel({
                 setShowSuggestions(e.target.value.length > 0)
               }}
               onFocus={() => {
-                console.log("[v0] Input focused")
                 setIsFocused(true)
               }}
               onBlur={() => {
-                console.log("[v0] Input blur - waiting 200ms")
                 setTimeout(() => {
                   setIsFocused(false)
                   setShowSuggestions(false)
@@ -260,7 +256,6 @@ export function SearchPanel({
                       key={index}
                       className="group w-full px-3 py-2.5 hover:bg-accent/50 rounded-lg flex items-center gap-3 transition-colors cursor-pointer"
                       onClick={() => {
-                        console.log("[v0] Clicking history item:", item)
                         const location = locationsDatabase.find((l) => l.lat === item.lat && l.lng === item.lng)
                         if (location) handleSearch(location)
                       }}
