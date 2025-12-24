@@ -48,6 +48,13 @@ interface Translations {
   removeWaypoint: string
   quickSearch: string
   clearAll: string
+  routeOptions: string
+  fastestRoute: string
+  shortestRoute: string
+  ecoRoute: string
+  recommended: string
+  collapsePanel: string
+  expandPanel: string
 }
 
 const translations: Record<Language, Translations> = {
@@ -95,6 +102,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "删除途经点",
     quickSearch: "快捷搜索",
     clearAll: "清空",
+    routeOptions: "路线选择",
+    fastestRoute: "最快路线",
+    shortestRoute: "距离最短",
+    ecoRoute: "环保路线",
+    recommended: "推荐",
+    collapsePanel: "收起面板",
+    expandPanel: "展开面板",
   },
   en: {
     searchPlaceholder: "Search places",
@@ -140,6 +154,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "Remove waypoint",
     quickSearch: "Quick Search",
     clearAll: "Clear All",
+    routeOptions: "Route Options",
+    fastestRoute: "Fastest Route",
+    shortestRoute: "Shortest Distance",
+    ecoRoute: "Eco-Friendly",
+    recommended: "Recommended",
+    collapsePanel: "Collapse panel",
+    expandPanel: "Expand panel",
   },
   ar: {
     searchPlaceholder: "البحث عن الأماكن",
@@ -185,6 +206,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "حذف نقطة مرور",
     quickSearch: "بحث سريع",
     clearAll: "مسح الكل",
+    routeOptions: "خيارات المسار",
+    fastestRoute: "المسار الأسرع",
+    shortestRoute: "أقصر مسافة",
+    ecoRoute: "صديق للبيئة",
+    recommended: "موصى به",
+    collapsePanel: "طي اللوحة",
+    expandPanel: "توسيع اللوحة",
   },
   ms: {
     searchPlaceholder: "Cari lokasi",
@@ -230,6 +258,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "Buang titik singgah",
     quickSearch: "Carian Pantas",
     clearAll: "Kosongkan Semua",
+    routeOptions: "Pilihan Laluan",
+    fastestRoute: "Laluan Terpantas",
+    shortestRoute: "Jarak Terpendek",
+    ecoRoute: "Mesra Alam",
+    recommended: "Disyorkan",
+    collapsePanel: "Tutup panel",
+    expandPanel: "Kembangkan panel",
   },
   pt: {
     searchPlaceholder: "Pesquisar locais",
@@ -275,6 +310,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "Remover ponto de passagem",
     quickSearch: "Busca Rápida",
     clearAll: "Limpar Tudo",
+    routeOptions: "Opções de Rota",
+    fastestRoute: "Rota Mais Rápida",
+    shortestRoute: "Distância Mais Curta",
+    ecoRoute: "Ecológica",
+    recommended: "Recomendado",
+    collapsePanel: "Recolher painel",
+    expandPanel: "Expandir painel",
   },
   es: {
     searchPlaceholder: "Buscar lugares",
@@ -320,6 +362,13 @@ const translations: Record<Language, Translations> = {
     removeWaypoint: "Eliminar punto de paso",
     quickSearch: "Búsqueda Rápida",
     clearAll: "Limpiar Todo",
+    routeOptions: "Opciones de Ruta",
+    fastestRoute: "Ruta Más Rápida",
+    shortestRoute: "Distancia Más Corta",
+    ecoRoute: "Ecológica",
+    recommended: "Recomendado",
+    collapsePanel: "Contraer panel",
+    expandPanel: "Expandir panel",
   },
 }
 

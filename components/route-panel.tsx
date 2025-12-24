@@ -1,7 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, MapPin, Car, Truck, ChevronRight, ArrowUpDown, X, Clock, Plus, Minus } from "lucide-react"
+import {
+  ArrowLeft,
+  MapPin,
+  Car,
+  Truck,
+  ChevronRight,
+  ArrowUpDown,
+  X,
+  Clock,
+  Plus,
+  Minus,
+  Zap,
+  Ruler,
+  Leaf,
+  ChevronLeft,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,12 +30,14 @@ interface RoutePanelProps {
   onRouteComplete: (
     start: { lat: number; lng: number; name: string },
     end: { lat: number; lng: number; name: string },
+    waypoints?: Array<{ lat: number; lng: number; name: string }>,
   ) => void
   onClose: () => void
   onClearRoute?: () => void
 }
 
 type TravelMode = "driving" | "truck"
+type RouteType = "fastest" | "shortest" | "eco"
 
 interface Waypoint {
   id: string
@@ -45,12 +62,14 @@ export function RoutePanel({
   const [waypoints, setWaypoints] = useState<Waypoint[]>([])
   const { t, language, dir } = useLanguage()
   const [travelMode, setTravelMode] = useState<TravelMode>("driving")
+  const [routeType, setRouteType] = useState<RouteType>("fastest")
   const [showRouteDetails, setShowRouteDetails] = useState(false)
   const [routeInstructions, setRouteInstructions] = useState<Array<{ icon: string; text: string; distance: string }>>(
     [],
   )
   const [totalDistance, setTotalDistance] = useState<number>(0)
   const [totalTime, setTotalTime] = useState<number>(0)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
     if (initialStartText && initialStartText !== startQuery) {
@@ -77,18 +96,25 @@ export function RoutePanel({
   useEffect(() => {
     if (selectedStart && selectedEnd) {
       console.log("[v0] Auto-planning route")
-      onRouteComplete(selectedStart, selectedEnd)
+      const waypointsData = waypoints.filter((wp) => wp.selected).map((wp) => wp.selected!)
+      onRouteComplete(selectedStart, selectedEnd, waypointsData)
       const instructions = generateRouteInstructions(selectedStart, selectedEnd, t)
       setRouteInstructions(instructions)
 
-      const distance = calculateDistance(selectedStart, selectedEnd)
-      const time = estimateTravelTime(distance, travelMode)
+      let totalDist = 0
+      const points = [selectedStart, ...waypointsData, selectedEnd]
+      for (let i = 0; i < points.length - 1; i++) {
+        totalDist += calculateDistance(points[i], points[i + 1])
+      }
+
+      const distance = adjustDistanceForRouteType(totalDist, routeType)
+      const time = estimateTravelTime(distance, travelMode, routeType)
       setTotalDistance(distance)
       setTotalTime(time)
 
       setShowRouteDetails(true)
     }
-  }, [selectedStart, selectedEnd, travelMode])
+  }, [selectedStart, selectedEnd, waypoints, travelMode, routeType])
 
   const handleStartSelect = (location: (typeof locationsDatabase)[0]) => {
     const locationName =
@@ -302,10 +328,50 @@ export function RoutePanel({
     return R * c
   }
 
-  const estimateTravelTime = (distanceKm: number, mode: TravelMode): number => {
-    // Average speeds: driving 60 km/h, truck 50 km/h
-    const speed = mode === "driving" ? 60 : 50
-    return (distanceKm / speed) * 60 // Return time in minutes
+  const estimateTravelTime = (distanceKm: number, mode: TravelMode, type: RouteType): number => {
+    let speed = mode === "driving" ? 60 : 50
+
+    if (type === "fastest") {
+      speed = mode === "driving" ? 80 : 65
+    } else if (type === "eco") {
+      speed = mode === "driving" ? 50 : 40
+    }
+
+    return (distanceKm / speed) * 60
+  }
+
+  const adjustDistanceForRouteType = (baseDistance: number, type: RouteType): number => {
+    switch (type) {
+      case "fastest":
+        return baseDistance * 1.1
+      case "shortest":
+        return baseDistance
+      case "eco":
+        return baseDistance * 1.15
+      default:
+        return baseDistance
+    }
+  }
+
+  const getRouteTypeIcon = (type: RouteType) => {
+    switch (type) {
+      case "fastest":
+        return <Zap className="h-4 w-4" />
+      case "shortest":
+        return <Ruler className="h-4 w-4" />
+      case "eco":
+        return <Leaf className="h-4 w-4" />
+    }
+  }
+
+  if (isCollapsed) {
+    return (
+      <div className={`absolute top-4 ${dir === "rtl" ? "right-20" : "left-4"} z-10`}>
+        <Button variant="default" size="icon" onClick={() => setIsCollapsed(false)} className="shadow-xl">
+          {dir === "rtl" ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -329,6 +395,7 @@ export function RoutePanel({
                   setSelectedEnd(null)
                   setStartQuery("")
                   setEndQuery("")
+                  setWaypoints([])
                   setShowRouteDetails(false)
                   onClearRoute?.()
                 }}
@@ -338,6 +405,14 @@ export function RoutePanel({
                 {t.clearRoute}
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(true)}
+              className={`${showRouteDetails ? "" : dir === "rtl" ? "mr-auto" : "ml-auto"} hover:bg-accent/50`}
+            >
+              {dir === "rtl" ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            </Button>
           </div>
 
           <div className="mb-4 flex gap-2">
@@ -378,6 +453,15 @@ export function RoutePanel({
                   onFocus={() => setShowStartSuggestions(true)}
                   className={`flex-1 h-11 ${dir === "rtl" ? "text-right" : ""} border-input focus-visible:ring-primary`}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSwapLocations}
+                  className="h-8 w-8 hover:bg-accent/50"
+                  title={t.swapStartEnd}
+                >
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
               </div>
 
               {showStartSuggestions && startQuery && filteredStartLocations.length > 0 && (
@@ -430,11 +514,14 @@ export function RoutePanel({
               </div>
             )}
 
+            {/* Waypoints */}
             {waypoints.map((waypoint, index) => (
               <div key={waypoint.id}>
                 <div className="relative">
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full bg-orange-500 flex-shrink-0 ring-4 ring-orange-500/20" />
+                    <div className="w-4 h-4 rounded-full bg-orange-500 flex-shrink-0 ring-4 ring-orange-500/20 flex items-center justify-center text-[10px] font-bold text-white">
+                      {index + 1}
+                    </div>
                     <Input
                       type="text"
                       placeholder={`${t.waypoint} ${index + 1}`}
@@ -493,9 +580,8 @@ export function RoutePanel({
                     )}
                 </div>
 
-                {/* Add Waypoint Button After Each Waypoint */}
-                {waypoints.length < 3 && (
-                  <div className={`flex items-center ${dir === "rtl" ? "mr-[7px]" : "ml-[7px]"}`}>
+                {waypoints.length < 3 && index === waypoints.length - 1 && (
+                  <div className={`flex items-center mt-4 ${dir === "rtl" ? "mr-[7px]" : "ml-[7px]"}`}>
                     <div className="h-3 w-0.5 bg-border" />
                     <Button
                       variant="ghost"
@@ -512,21 +598,6 @@ export function RoutePanel({
               </div>
             ))}
 
-            {/* Swap Button */}
-            <div className={`flex items-center ${dir === "rtl" ? "mr-[7px]" : "ml-[7px]"}`}>
-              <div className="h-3 w-0.5 bg-border" />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSwapLocations}
-                className="h-8 w-8 rounded-full hover:bg-primary/10 mx-auto"
-                title={t.swapStartEnd}
-              >
-                <ArrowUpDown className="h-4 w-4 text-primary" />
-              </Button>
-              <div className="h-3 w-0.5 bg-border" />
-            </div>
-
             {/* End Location */}
             <div className="relative">
               <div className="flex items-center gap-3">
@@ -541,7 +612,7 @@ export function RoutePanel({
                     setSelectedEnd(null)
                   }}
                   onFocus={() => setShowEndSuggestions(true)}
-                  className={`flex-1 h-11 ${dir === "rtl" ? "text-right" : ""} border-input focus-visible:ring-primary`}
+                  className={`flex-1 h-11 ${dir === "rtl" ? "text-right" : ""} border-input focus-visible:ring-destructive`}
                 />
               </div>
 
@@ -579,40 +650,90 @@ export function RoutePanel({
             </div>
           </div>
 
-          {showRouteDetails && selectedStart && selectedEnd && (
-            <div className="mt-4 space-y-3">
-              <div className="p-4 bg-primary/10 rounded-xl border border-primary/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">{t.distance}</p>
-                      <p className="text-xl font-bold text-foreground">{totalDistance.toFixed(1)} km</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">{t.estimatedTime}</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {totalTime < 60
-                          ? `${Math.round(totalTime)} ${t.minutes}`
-                          : `${Math.floor(totalTime / 60)} ${t.hours} ${Math.round(totalTime % 60)} ${t.minutes}`}
-                      </p>
-                    </div>
-                  </div>
+          {showRouteDetails && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold mb-3">{t.routeOptions}</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setRouteType("fastest")}
+                    className={`w-full p-3 rounded-lg border-2 flex items-center gap-3 transition-all ${
+                      routeType === "fastest"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-accent/30"
+                    }`}
+                  >
+                    {getRouteTypeIcon("fastest")}
+                    <span className="font-medium">{t.fastestRoute}</span>
+                    {routeType === "fastest" && (
+                      <Badge variant="default" className={`${dir === "rtl" ? "mr-auto" : "ml-auto"} text-xs`}>
+                        {t.recommended}
+                      </Badge>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setRouteType("shortest")}
+                    className={`w-full p-3 rounded-lg border-2 flex items-center gap-3 transition-all ${
+                      routeType === "shortest"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-accent/30"
+                    }`}
+                  >
+                    {getRouteTypeIcon("shortest")}
+                    <span className="font-medium">{t.shortestRoute}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setRouteType("eco")}
+                    className={`w-full p-3 rounded-lg border-2 flex items-center gap-3 transition-all ${
+                      routeType === "eco"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-accent/30"
+                    }`}
+                  >
+                    {getRouteTypeIcon("eco")}
+                    <span className="font-medium">{t.ecoRoute}</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="p-4 bg-primary/5 rounded-xl border border-primary/20 max-h-[400px] overflow-y-auto">
+              {/* Route Summary */}
+              <Card className="bg-accent/30 border-none p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{t.distance}</span>
+                  </div>
+                  <span className="text-lg font-bold">{Math.round(totalDistance)} km</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{t.estimatedTime}</span>
+                  </div>
+                  <span className="text-lg font-bold">
+                    {totalTime >= 60
+                      ? `${Math.floor(totalTime / 60)} ${t.hours} ${Math.round(totalTime % 60)} ${t.minutes}`
+                      : `${Math.round(totalTime)} ${t.minutes}`}
+                  </span>
+                </div>
+              </Card>
+
+              {/* Route Instructions */}
+              <div>
                 <div className="space-y-3">
                   {routeInstructions.map((instruction, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className="mt-1">{renderInstructionIcon(instruction.icon)}</div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">{instruction.text}</p>
+                        <p className={`text-sm ${dir === "rtl" ? "text-right" : "text-left"}`}>{instruction.text}</p>
                         {instruction.distance && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{instruction.distance}</p>
+                          <p
+                            className={`text-xs text-muted-foreground mt-1 ${dir === "rtl" ? "text-right" : "text-left"}`}
+                          >
+                            {instruction.distance}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -625,4 +746,13 @@ export function RoutePanel({
       </Card>
     </div>
   )
+}
+
+function formatTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  if (hours > 0) {
+    return `${hours}h ${mins}min`
+  }
+  return `${mins}min`
 }
